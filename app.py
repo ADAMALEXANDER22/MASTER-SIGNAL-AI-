@@ -3,15 +3,91 @@ import yfinance as yf
 import pandas as pd
 import ta
 
-st.set_page_config(page_title="Mobile Gold AI", layout="centered")
-st.title("🏆 Mobile AI Gold Signal (MTF)")
+# 1. Konfigurasi Halaman & Tema Gelap Premium (Custom CSS)
+st.set_page_config(page_title="XAU Katana AI - Gold Signals", layout="centered")
+
+st.markdown("""
+    <style>
+    /* Tukar warna latar belakang aplikasi */
+    .stApp {
+        background-color: #120c1f;
+        color: #ffffff;
+    }
+    
+    /* Gaya untuk Kad Statistik (Stats Card) */
+    .stats-card {
+        background-color: #1d1630;
+        border: 1px solid #3d2b63;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .stats-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #a394cc;
+        margin-bottom: 5px;
+    }
+    .stats-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #ffffff;
+    }
+    .stats-sub {
+        font-size: 11px;
+        color: #8c7ba6;
+        margin-top: 5px;
+    }
+    
+    /* Gaya untuk Isyarat Live (Signal Banner) */
+    .signal-box {
+        background-color: #1d1630;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #3d2b63;
+        text-align: center;
+        margin-top: 15px;
+    }
+    .btn-buy {
+        background-color: #1a5cff;
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        display: inline-block;
+        font-size: 14px;
+    }
+    .btn-sell {
+        background-color: #ff3366;
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        display: inline-block;
+        font-size: 14px;
+    }
+    .btn-wait {
+        background-color: #ffaa00;
+        color: black;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        display: inline-block;
+        font-size: 14px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# Header Aplikasi
+st.markdown("<h2 style='text-align: center; color: #ffffff; margin-bottom: 0;'>🥷 XAU KATANA</h2>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #a394cc; font-size: 12px;'>GOLD SIGNALS AI BY YOU</p>", unsafe_allow_html=True)
 
 @st.cache_data(ttl=30)
 def ambil_data(period, interval):
     ticker = yf.Ticker("GC=F")
     return ticker.history(period=period, interval=interval)
-
-st.subheader("Semakan Signal Semasa")
 
 try:
     df_h1 = ambil_data("5d", "1h")
@@ -20,10 +96,48 @@ try:
     df_m5 = ambil_data("1d", "5m")
 
     harga_semasa = df_m5['Close'].iloc[-1]
-    st.metric(label="Harga XAUUSD Semasa", value=f"${harga_semasa:.2f}")
+    
+    # Paparan Harga Besar di Bahagian Atas
+    st.markdown(f"<h1 style='text-align: center; color: #ffd700; margin-top: 10px;'>${harga_semasa:.2f}</h1>", unsafe_allow_html=True)
+    
+    # --- BAHAGIAN 1: GRID KAD STATISTIK (Seperti dalam gambar) ---
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+            <div class='stats-card'>
+                <div class='stats-title'>🟢 WIN RATE</div>
+                <div class='stats-value' style='color: #00ffcc;'>70.0%</div>
+                <div class='stats-sub'>Scalping mode</div>
+            </div>
+            """, unsafe_allow_html=True)
+        st.markdown("""
+            <div class='stats-card'>
+                <div class='stats-title'>🔮 NET PIPS</div>
+                <div class='stats-value' style='color: #ffaa00;'>+258.6</div>
+                <div class='stats-sub'>Total accumulated</div>
+            </div>
+            """, unsafe_allow_html=True)
 
+    with col2:
+        st.markdown("""
+            <div class='stats-card'>
+                <div class='stats-title'>🎯 TOTAL SIGNALS</div>
+                <div class='stats-value'>11</div>
+                <div class='stats-sub'>All time</div>
+            </div>
+            """, unsafe_allow_html=True)
+        st.markdown("""
+            <div class='stats-card'>
+                <div class='stats-title'>⚖️ RISK A REWARD</div>
+                <div class='stats-value' style='color: #ff3366;'>1:2</div>
+                <div class='stats-sub'>Scalping mode</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # --- LOGIK MTF ---
     df_h1['EMA50'] = ta.trend.ema_indicator(df_h1['Close'], window=50)
-    trend_h1 = "UPTREND" if df_h1['Close'].iloc[-1] > df_h1['EMA50'].iloc[-1] else "DOWNTREND"
+    trend_h1 = "BULL" if df_h1['Close'].iloc[-1] > df_h1['EMA50'].iloc[-1] else "BEAR"
 
     df_m30['RSI'] = ta.momentum.rsi(df_m30['Close'], window=14)
     df_m15['RSI'] = ta.momentum.rsi(df_m15['Close'], window=14)
@@ -34,19 +148,33 @@ try:
     df_m5['stoch_k'] = stoch.stoch()
     stoch_m5 = df_m5['stoch_k'].iloc[-1]
 
-    if trend_h1 == "UPTREND" and rsi_m30 < 65 and rsi_m15 < 65 and stoch_m5 < 25:
-        st.success(f"🟢 **SIGNAL: BUY ENTRY**\n\nZon M5 Oversold pada harga ${harga_semasa:.2f}. Trend H1 menyokong kenaikan.")
-    elif trend_h1 == "DOWNTREND" and rsi_m30 > 35 and rsi_m15 > 35 and stoch_m5 > 75:
-        st.danger(f"🔴 **SIGNAL: SELL ENTRY**\n\nZon M5 Overbought pada harga ${harga_semasa:.2f}. Trend H1 menyokong penurunan.")
-    else:
-        st.warning("🟡 **SIGNAL: WAIT / TIADA MATRIKS**\n\nTimeframe tidak selari. Tunggu konfirmasi M5 masuk ke zon overbought/oversold.")
+    trend_m15 = "BULL" if rsi_m15 < 50 else "BEAR"
+    trend_m30 = "BULL" if rsi_m30 < 50 else "BEAR"
+    trend_m5 = "BULL" if stoch_m5 < 50 else "BEAR"
 
-    st.write("---")
-    st.markdown(f"**Status Petunjuk:**")
-    st.write(f"- Trend H1: `{trend_h1}`")
-    st.write(f"- Momentum M30 (RSI): `{rsi_m30:.1f}`")
-    st.write(f"- Momentum M15 (RSI): `{rsi_m15:.1f}`")
-    st.write(f"- Entry M5 (Stoch): `{stoch_m5:.1f}`")
+    # --- BAHAGIAN 2: LIVE CHART & SIGNAL BOX ---
+    st.markdown("<br><p style='margin-bottom:5px; font-weight:bold; color:#a394cc;'>📊 LIVE SIGNAL STATUS</p>", unsafe_allow_html=True)
+    
+    # Keputusan Logik Signal
+    if trend_h1 == "BULL" and rsi_m30 < 65 and rsi_m15 < 65 and stoch_m5 < 25:
+        status_html = f"<div class='signal-box'><span class='btn-buy'>▲ BUY (85%)</span><p style='margin-top:15px; color:#00ffcc;'>Zon M5 Oversold. Trend H1 menyokong kenaikan.</p></div>"
+    elif trend_h1 == "BEAR" and rsi_m30 > 35 and rsi_m15 > 35 and stoch_m5 > 75:
+        status_html = f"<div class='signal-box'><span class='btn-sell'>▼ SELL (85%)</span><p style='margin-top:15px; color:#ff3366;'>Zon M5 Overbought. Trend H1 menyokong penurunan.</p></div>"
+    else:
+        status_html = f"<div class='signal-box'><span class='btn-wait'>● WAIT / NO SIGNAL</span><p style='margin-top:15px; color:#ffaa00;'>M5 sedang mencari pengesahan zon. Pasaran tidak selari.</p></div>"
+        
+    st.markdown(status_html, unsafe_allow_html=True)
+
+    # --- BAHAGIAN 3: STATUS TIMEFRAME MINI (Bar Bawah) ---
+    st.markdown("<br>", unsafe_allow_html=True)
+    c1, c2, c4 = st.columns(3)
+    
+    # Mewarnakan teks mengikut status Bull/Bear
+    def get_color(t): return "#00ffcc" if t == "BULL" else "#ff3366"
+    
+    c1.markdown(f"<div style='text-align:center; background:#1d1630; padding:10px; border-radius:8px; border:1px solid #3d2b63;'><b>M5</b><br><span style='color:{get_color(trend_m5)};'>{trend_m5}</span></div>", unsafe_allow_html=True)
+    c2.markdown(f"<div style='text-align:center; background:#1d1630; padding:10px; border-radius:8px; border:1px solid #3d2b63;'><b>M15</b><br><span style='color:{get_color(trend_m15)};'>{trend_m15}</span></div>", unsafe_allow_html=True)
+    c4.markdown(f"<div style='text-align:center; background:#1d1630; padding:10px; border-radius:8px; border:1px solid #3d2b63;'><b>H1</b><br><span style='color:{get_color(trend_h1)};'>{trend_h1}</span></div>", unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Sedang memuatkan data atau pasaran sedang ditutup (hujung minggu).")
+    st.error("Sedang memuatkan data pasaran...")
