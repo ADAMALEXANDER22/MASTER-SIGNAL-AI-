@@ -52,7 +52,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- SISTEM SIMPANAN MEMORI (Session State untuk Paper Trading & History) ---
+# --- SISTEM SIMPANAN MEMORI (Paper Trading & History) ---
 if "demo_balance" not in st.session_state:
     st.session_state.demo_balance = 10000.0
 if "active_position" not in st.session_state:
@@ -78,11 +78,10 @@ try:
     harga_semasa = df_m5['Close'].iloc[-1]
     st.markdown(f"<h1 style='text-align: center; color: #ffd700; margin-top: 10px;'>${harga_semasa:.2f}</h1>", unsafe_allow_html=True)
     
-    # --- NO 5: BAROMETER SENTIMEN PASARAN (RSI & Volume Based Engine) ---
+    # --- BAROMETER SENTIMEN PASARAN ---
     st.markdown("<p style='margin-bottom:2px; font-weight:bold; color:#a394cc; font-size:12px;'>📊 RETAIL SENTIMENT GAUGE</p>", unsafe_allow_html=True)
     df_m5['RSI_Sent'] = ta.momentum.rsi(df_m5['Close'], window=14)
     rsi_latest = df_m5['RSI_Sent'].iloc[-1]
-    # Tukar nilai RSI kepada anggaran sentimen Buy vs Sell
     buy_sentiment = int(max(10, min(90, (rsi_latest - 20) * 1.6)))
     sell_sentiment = 100 - buy_sentiment
 
@@ -107,15 +106,11 @@ try:
         st.markdown("<div class='stats-card'><div class='stats-title'>🔮 NET PIPS</div><div class='stats-value' style='color: #ffaa00;'>+200.0</div><div class='stats-sub'>Accumulated Pips</div></div>", unsafe_allow_html=True)
         st.markdown("<div class='stats-card'><div class='stats-title'>🎯 TOTAL SIGNALS</div><div class='stats-value'>3</div><div class='stats-sub'>Scanned Trades</div></div>", unsafe_allow_html=True)
 
-    # --- NO 1: CARTA LILIN INTERAKTIF TRADINGVIEW (WIDGET COMPONENT) ---
+    # --- CARTA LILIN INTERAKTIF TRADINGVIEW ---
     st.markdown("<br><p style='margin-bottom:5px; font-weight:bold; color:#a394cc;'>📈 XAUUSD LIVE CHART (TRADINGVIEW)</p>", unsafe_allow_html=True)
     ch_html = """
     <div style="height:350px;">
-    <!-- TradingView Widget BEGIN -->
-    <div class="tradingview-widget-container" style="height:100%;width:100%;">
       <iframe src="https://tradingview.com" style="width: 100%; height: 100%; border:none; border-radius:8px;" allowfullscreen></iframe>
-    </div>
-    <!-- TradingView Widget END -->
     </div>
     """
     components.html(ch_html, height=350)
@@ -161,3 +156,7 @@ try:
         sl_harga = harga_semasa - (atr_semasa * 1.5)
         tp_harga = harga_semasa + (atr_semasa * 3.0)
         status_html = f"<div class='signal-box'><span class='btn-buy'>▲ BUY ENTRY (CONFIRMED)</span><div class='target-box'>🟢 <b>ENTRY:</b> ${harga_semasa:.2f}<br>🔴 <b>STOP LOSS:</b> ${sl_harga:.2f}<br>🔵 <b>TAKE PROFIT:</b> ${tp_harga:.2f}<br><br>🧮 <b>CADANGAN SAIZ LOT:</b> {lot_size:.2f} Lot</div></div>"
+    elif trend_h1 == "BEAR" and rsi_m30 > 35 and rsi_m15 > 35 and stoch_m5 > 75 and harga_semasa < ema200_m5:
+        signal_type = "SELL"
+        sl_harga = harga_semasa + (atr_semasa * 1.5)
+        tp_harga = harga_semasa - (atr_semasa * 3.0)
