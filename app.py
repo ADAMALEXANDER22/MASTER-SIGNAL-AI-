@@ -25,7 +25,8 @@ st.markdown("<h2 style='text-align: center; color: #ffffff; font-weight: 900; ma
 st.markdown("<p style='text-align: center; color: #818cf8; font-size: 11px; font-weight: 700; letter-spacing: 3px; margin-top:0;'>AI TRADING SIGNAL PLATFORM</p>", unsafe_allow_html=True)
 
 # Sesi Pasaran Live (Zon Masa Malaysia)
-jam_myt = datetime.now(pytz.timezone('Asia/Kuala_Lumpur')).hour
+tz_my = pytz.timezone('Asia/Kuala_Lumpur')
+jam_myt = datetime.now(tz_my).hour
 s_asia = "🟢 ACTIVE" if (7 <= jam_myt < 15) else "⚪ CLOSED"
 s_london = "🟢 ACTIVE" if (15 <= jam_myt < 23) else "⚪ CLOSED"
 s_ny = "🟢 ACTIVE" if (jam_myt >= 20 or jam_myt < 4) else "⚪ CLOSED"
@@ -77,14 +78,14 @@ try:
     </div>
     """, unsafe_allow_html=True)
 
-    # --- 2. CIRI BARU: BAR ALIRAN MOMENTUM TREND (ADX BASED) ---
+    # Bar Aliran Momentum Trend (ADX Based)
     df_m5['ADX'] = ta.trend.adx(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14)
     adx_val = df_m5['ADX'].iloc[-1] if not pd.isna(df_m5['ADX'].iloc[-1]) else 25.0
-    progress_adx = max(0.0, min(1.0, adx_val / 60.0)) # Anggaran skala penuh 60 ADX
+    progress_adx = max(0.0, min(1.0, adx_val / 60.0))
     
     st.markdown("<p style='font-size:11px; font-weight:bold; color:#a394cc; margin-bottom:2px;'>⚡ AI TREND STRENGTH MOMENTUM</p>", unsafe_allow_html=True)
     st.progress(progress_adx)
-    st.markdown(f"<p style='font-size:10px; color:#64748b; margin-top:2px;'>ADX Power Index: {adx_val:.1f} (Di atas 25 bermakna trend sangat kuat)</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='font-size:10px; color:#64748b; margin-top:2px;'>ADX Power Index: {adx_val:.1f}</p>", unsafe_allow_html=True)
 
     # Grid Statistik Utama
     col1, col2 = st.columns(2)
@@ -129,7 +130,6 @@ try:
         tp2 = harga_semasa + (atr_semasa * 3.0)
         tp3 = harga_semasa + (atr_semasa * 4.5)
         st.success(f"▲ BUY ENTRY (CONFIRMED)\n\nENTRY: ${harga_semasa:.2f}\n🔴 SL: ${sl_harga:.2f}\n🔵 TP1: ${tp1:.2f} | TP2: ${tp2:.2f} | TP3: ${tp3:.2f}\n🧮 LOT: {lot_size:.2f}")
-        # --- 1. CIRI BARU: PENGGERA AUDIO UNTUK BUY ---
         st.audio("https://google.com", format="audio/ogg", autoplay=True)
     elif t_h1 == "BEAR" and stoch_latest > 60:
         signal_type = "SELL"
@@ -138,7 +138,6 @@ try:
         tp2 = harga_semasa - (atr_semasa * 3.0)
         tp3 = harga_semasa - (atr_semasa * 4.5)
         st.error(f"▼ SELL ENTRY (CONFIRMED)\n\nENTRY: ${harga_semasa:.2f}\n🔴 SL: ${sl_harga:.2f}\n🔵 TP1: ${tp1:.2f} | TP2: ${tp2:.2f} | TP3: ${tp3:.2f}\n🧮 LOT: {lot_size:.2f}")
-        # --- 1. CIRI BARU: PENGGERA AUDIO UNTUK SELL ---
         st.audio("https://google.com", format="audio/ogg", autoplay=True)
     else:
         st.warning("● SCANNING MARKET\n\nMulti-timeframe sedang mencari zon keselarasan pasaran.")
@@ -160,3 +159,4 @@ try:
         st.warning(f"Active Position: {pos['Jenis']} @ ${pos['Entry']:.2f} ({pips_live:+.1f} Pips)")
         if st.button("🔒 CLOSE SIMULATED POSITION NOW", use_container_width=True):
             prof = pips_live * lot_size
+            st.session_state.demo_balance += prof
