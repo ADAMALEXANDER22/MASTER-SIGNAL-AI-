@@ -88,7 +88,7 @@ try:
         st.markdown("<div class='stats-card'><div class='stats-title'>🔮 NET PIPS</div><div class='stats-value' style='color: #ffaa00;'>+200.0</div></div>", unsafe_allow_html=True)
         st.markdown("<div class='stats-card'><div class='stats-title'>🎯 TOTAL SIGNALS</div><div class='stats-value'>2</div></div>", unsafe_allow_html=True)
 
-    # --- NO 1: BUTANG LINK PINTAS CARTA TRADINGVIEW (KALIS SEKATAN MOBILE) ---
+    # Link Pintas Carta TradingView
     st.markdown("<p style='font-weight:bold; color:#a394cc; margin-bottom:2px;'>📈 XAUUSD LIVE CHART</p>", unsafe_allow_html=True)
     st.link_button("📊 BUKA CARTA LIVE TRADINGVIEW (M5)", "https://tradingview.com", use_container_width=True)
 
@@ -108,20 +108,24 @@ try:
     jarak_pips_sl = (atr_semasa * 1.5) * 10
     lot_size = max(0.01, duit_risiko / jarak_pips_sl) if jarak_pips_sl > 0 else 0.01
 
-    # 6. Pemprosesan Isyarat Isyarat
+    # 6. Pemprosesan Isyarat Isyarat dengan TP Bertingkat
     st.markdown("<br><p style='font-weight:bold; color:#a394cc;'>📊 LIVE SIGNAL STATUS</p>", unsafe_allow_html=True)
     
     signal_type = "WAIT"
     if t_h1 == "BULL" and df_m5['stoch_k'].iloc[-1] < 25 and harga_semasa > df_m5['EMA200'].iloc[-1]:
         signal_type = "BUY"
         sl = harga_semasa - (atr_semasa * 1.5)
-        tp = harga_semasa + (atr_semasa * 3.0)
-        st.success(f"▲ BUY ENTRY (CONFIRMED)\n\nENTRY: ${harga_semasa:.2f} | SL: ${sl:.2f} | TP: ${tp:.2f} | Lot: {lot_size:.2f}")
+        tp1 = harga_semasa + (atr_semasa * 1.5)  # RR 1:1
+        tp2 = harga_semasa + (atr_semasa * 3.0)  # RR 1:2
+        tp3 = harga_semasa + (atr_semasa * 4.5)  # RR 1:3
+        st.success(f"▲ BUY ENTRY (CONFIRMED)\n\nENTRY: ${harga_semasa:.2f}\n🔴 STOP LOSS: ${sl:.2f}\n\n🔵 TAKE PROFIT 1: ${tp1:.2f}\n🔵 TAKE PROFIT 2: ${tp2:.2f}\n🔵 TAKE PROFIT 3: ${tp3:.2f}\n\n🧮 Lot: {lot_size:.2f} | 💵 Max Risk: ${duit_risiko:.2f}")
     elif t_h1 == "BEAR" and df_m5['stoch_k'].iloc[-1] > 75 and harga_semasa < df_m5['EMA200'].iloc[-1]:
         signal_type = "SELL"
         sl = harga_semasa + (atr_semasa * 1.5)
-        tp = harga_semasa - (atr_semasa * 3.0)
-        st.error(f"▼ SELL ENTRY (CONFIRMED)\n\nENTRY: ${harga_semasa:.2f} | SL: ${sl:.2f} | TP: ${tp:.2f} | Lot: {lot_size:.2f}")
+        tp1 = harga_semasa - (atr_semasa * 1.5)  # RR 1:1
+        tp2 = harga_semasa - (atr_semasa * 3.0)  # RR 1:2
+        tp3 = harga_semasa - (atr_semasa * 4.5)  # RR 1:3
+        st.error(f"▼ SELL ENTRY (CONFIRMED)\n\nENTRY: ${harga_semasa:.2f}\n🔴 STOP LOSS: ${sl:.2f}\n\n🔵 TAKE PROFIT 1: ${tp1:.2f}\n🔵 TAKE PROFIT 2: ${tp2:.2f}\n🔵 TAKE PROFIT 3: ${tp3:.2f}\n\n🧮 Lot: {lot_size:.2f} | 💵 Max Risk: ${duit_risiko:.2f}")
     else:
         st.warning("● WAIT / SCANNING MARKET\n\nMulti-timeframe tidak selari. Tunggu konfirmasi struktur M5.")
 
