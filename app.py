@@ -55,7 +55,6 @@ modal_akaun = st.number_input("Modal Akaun ($)", min_value=10, value=1000, step=
 peratus_risiko = st.slider("Risiko Per Trade (%)", min_value=1, max_value=5, value=2)
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Main Try-Except Block yang sangat ringkas untuk mengelakkan ralat struktur
 try:
     df_m5 = yf.Ticker("GC=F").history(period="7d", interval="5m")
     df_m15 = yf.Ticker("GC=F").history(period="3d", interval="15m")
@@ -90,10 +89,34 @@ try:
         st.markdown("<div class='stats-card'><div class='stats-title'>🔮 NET PIPS</div><div class='stats-value' style='color: #ffaa00;'>+200.0</div></div>", unsafe_allow_html=True)
         st.markdown("<div class='stats-card'><div class='stats-title'>🎯 TOTAL SIGNALS</div><div class='stats-value'>2</div></div>", unsafe_allow_html=True)
 
-    # 5. Widget Carta Live TradingView
-    st.markdown("<p style='font-weight:bold; color:#a394cc;'>📈 XAUUSD LIVE CHART</p>", unsafe_allow_html=True)
-    ch_html = '<iframe src="https://tradingview.com" style="width: 100%; height: 300px; border:none; border-radius:8px;"></iframe>'
-    components.html(ch_html, height=300)
+    # --- KOD WIDGET CARTA RASMI TRADINGVIEW BARU (KALIS SEKATAN MOBILE) ---
+    st.markdown("<p style='font-weight:bold; color:#a394cc; margin-bottom:5px;'>📈 XAUUSD LIVE CHART</p>", unsafe_allow_html=True)
+    
+    tv_widget_code = """
+    <!-- TradingView Widget BEGIN -->
+    <div class="tradingview-widget-container" style="height:350px;width:100%;">
+      <div id="tradingview_chart" style="height:100%;width:100%;"></div>
+      <script type="text/javascript" src="https://tradingview.com"></script>
+      <script type="text/javascript">
+      new TradingView.widget({
+        "autosize": true,
+        "symbol": "FX:XAUUSD",
+        "interval": "5",
+        "timezone": "Asia/Kuala_Lumpur",
+        "theme": "dark",
+        "style": "1",
+        "locale": "ms",
+        "toolbar_bg": "#f1f3f6",
+        "enable_publishing": false,
+        "hide_side_toolbar": false,
+        "allow_symbol_change": true,
+        "container_id": "tradingview_chart"
+      });
+      </script>
+    </div>
+    <!-- TradingView Widget END -->
+    """
+    components.html(tv_widget_code, height=360)
 
     # Pengiraan Teknikal Multi-Timeframe
     df_h1['EMA50'] = ta.trend.ema_indicator(df_h1['Close'], window=50)
@@ -111,7 +134,7 @@ try:
     jarak_pips_sl = (atr_semasa * 1.5) * 10
     lot_size = max(0.01, duit_risiko / jarak_pips_sl) if jarak_pips_sl > 0 else 0.01
 
-    # 6. Pemprosesan Isyarat Isyarat (Zon Isyarat Mudah)
+    # 6. Pemprosesan Isyarat Isyarat
     st.markdown("<br><p style='font-weight:bold; color:#a394cc;'>📊 LIVE SIGNAL STATUS</p>", unsafe_allow_html=True)
     
     signal_type = "WAIT"
@@ -156,7 +179,7 @@ try:
     c3.metric("M30", t_m30)
     c4.metric("H1", t_h1)
 
-    # 9. Sejarah Log Signal الجدول
+    # 9. Sejarah Log Signal
     st.markdown("<br><p style='font-weight:bold; color:#a394cc;'>📜 REKOD SEJARAH SIGNAL (LOG)</p>", unsafe_allow_html=True)
     st.dataframe(pd.DataFrame(st.session_state.trade_history), use_container_width=True, hide_index=True)
 
