@@ -24,7 +24,7 @@ st.markdown("""
 st.markdown("<h2 style='text-align: center; color: #ffffff; font-weight: 900; margin-bottom:0;'>🔱 XAU MASTER</h2>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #818cf8; font-size: 11px; font-weight: 700; letter-spacing: 3px; margin-top:0;'>AI TRADING SIGNAL PLATFORM</p>", unsafe_allow_html=True)
 
-# 2. Sesi Pasaran Live (Zon Masa Malaysia)
+# Sesi Pasaran Live (Zon Masa Malaysia)
 jam_myt = datetime.now(pytz.timezone('Asia/Kuala_Lumpur')).hour
 s_asia = "🟢 ACTIVE" if (7 <= jam_myt < 15) else "⚪ CLOSED"
 s_london = "🟢 ACTIVE" if (15 <= jam_myt < 23) else "⚪ CLOSED"
@@ -46,7 +46,7 @@ if "trade_history" not in st.session_state:
         {"Waktu": "05-11 10:15", "Jenis": "SELL", "Entry": 2732.10, "Exit": 2736.50, "Pips": "-44.0", "Hasil": "❌ SL"}
     ]
 
-# 3. Input Pengurusan Risiko
+# Input Pengurusan Risiko
 st.markdown("<div class='stats-card'><p style='font-size:12px; font-weight:bold; color:#93c5fd; margin-bottom:0;'>⚡ RISK MANAGEMENT PORTAL</p>", unsafe_allow_html=True)
 modal_akaun = st.number_input("Modal Akaun ($)", min_value=10, value=1000, step=10)
 peratus_risiko = st.slider("Risiko Per Trade (%)", min_value=1, max_value=5, value=2)
@@ -61,7 +61,7 @@ try:
     harga_semasa = df_m5['Close'].iloc[-1]
     st.markdown(f"<h1 style='text-align: center; color: #ffd700; font-weight:900;'>${harga_semasa:.2f}</h1>", unsafe_allow_html=True)
 
-    # 4. Barometer Sentimen Pasaran
+    # Barometer Sentimen Pasaran
     df_m5['RSI'] = ta.momentum.rsi(df_m5['Close'], window=14)
     rsi_latest = df_m5['RSI'].iloc[-1]
     buy_sentiment = int(max(10, min(90, (rsi_latest - 20) * 1.6)))
@@ -76,6 +76,15 @@ try:
         <div class='sentiment-track'><div class='sentiment-bar' style='width: {buy_sentiment}%;'></div></div>
     </div>
     """, unsafe_allow_html=True)
+
+    # --- 2. CIRI BARU: BAR ALIRAN MOMENTUM TREND (ADX BASED) ---
+    df_m5['ADX'] = ta.trend.adx(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14)
+    adx_val = df_m5['ADX'].iloc[-1] if not pd.isna(df_m5['ADX'].iloc[-1]) else 25.0
+    progress_adx = max(0.0, min(1.0, adx_val / 60.0)) # Anggaran skala penuh 60 ADX
+    
+    st.markdown("<p style='font-size:11px; font-weight:bold; color:#a394cc; margin-bottom:2px;'>⚡ AI TREND STRENGTH MOMENTUM</p>", unsafe_allow_html=True)
+    st.progress(progress_adx)
+    st.markdown(f"<p style='font-size:10px; color:#64748b; margin-top:2px;'>ADX Power Index: {adx_val:.1f} (Di atas 25 bermakna trend sangat kuat)</p>", unsafe_allow_html=True)
 
     # Grid Statistik Utama
     col1, col2 = st.columns(2)
@@ -120,6 +129,8 @@ try:
         tp2 = harga_semasa + (atr_semasa * 3.0)
         tp3 = harga_semasa + (atr_semasa * 4.5)
         st.success(f"▲ BUY ENTRY (CONFIRMED)\n\nENTRY: ${harga_semasa:.2f}\n🔴 SL: ${sl_harga:.2f}\n🔵 TP1: ${tp1:.2f} | TP2: ${tp2:.2f} | TP3: ${tp3:.2f}\n🧮 LOT: {lot_size:.2f}")
+        # --- 1. CIRI BARU: PENGGERA AUDIO UNTUK BUY ---
+        st.audio("https://google.com", format="audio/ogg", autoplay=True)
     elif t_h1 == "BEAR" and stoch_latest > 60:
         signal_type = "SELL"
         sl_harga = harga_semasa + (atr_semasa * 1.5)
@@ -127,6 +138,8 @@ try:
         tp2 = harga_semasa - (atr_semasa * 3.0)
         tp3 = harga_semasa - (atr_semasa * 4.5)
         st.error(f"▼ SELL ENTRY (CONFIRMED)\n\nENTRY: ${harga_semasa:.2f}\n🔴 SL: ${sl_harga:.2f}\n🔵 TP1: ${tp1:.2f} | TP2: ${tp2:.2f} | TP3: ${tp3:.2f}\n🧮 LOT: {lot_size:.2f}")
+        # --- 1. CIRI BARU: PENGGERA AUDIO UNTUK SELL ---
+        st.audio("https://google.com", format="audio/ogg", autoplay=True)
     else:
         st.warning("● SCANNING MARKET\n\nMulti-timeframe sedang mencari zon keselarasan pasaran.")
 
@@ -147,22 +160,3 @@ try:
         st.warning(f"Active Position: {pos['Jenis']} @ ${pos['Entry']:.2f} ({pips_live:+.1f} Pips)")
         if st.button("🔒 CLOSE SIMULATED POSITION NOW", use_container_width=True):
             prof = pips_live * lot_size
-            st.session_state.demo_balance += prof
-            st.session_state.trade_history.insert(0, {"Waktu": pos["Waktu"], "Jenis": pos["Jenis"], "Entry": pos["Entry"], "Exit": harga_semasa, "Pips": f"{pips_live:+.1f}", "Hasil": "✅ TP" if prof > 0 else "❌ SL"})
-            st.session_state.active_position = None
-            st.rerun()
-
-    # Timeframe Monitor
-    st.markdown("<br><p style='font-weight:bold; color:#93c5fd; font-size:12px; margin-bottom:4px;'>⏱️ TIMEFRAME MONITOR</p>", unsafe_allow_html=True)
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("M5", t_m5)
-    c2.metric("M15", t_m15)
-    c3.metric("M30", t_m30)
-    c4.metric("H1", t_h1)
-
-    # Sejarah Log Signal
-    st.markdown("<br><p style='font-weight:bold; color:#93c5fd; font-size:12px; margin-bottom:4px;'>📜 ARCHIVED SIGNAL LOGS</p>", unsafe_allow_html=True)
-    st.dataframe(pd.DataFrame(st.session_state.trade_history), use_container_width=True, hide_index=True)
-
-except Exception as e:
-    st.error("Sedang memuat data live atau pasaran ditutup (hujung minggu).")
