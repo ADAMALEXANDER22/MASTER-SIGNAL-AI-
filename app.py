@@ -4,7 +4,6 @@ import pandas as pd
 import ta
 from datetime import datetime
 import pytz
-import streamlit.components.v1 as components
 
 # 1. Konfigurasi Halaman & Tema Gelap Premium CSS
 st.set_page_config(page_title="XAU MASTER AI SIGNAL", layout="centered")
@@ -89,34 +88,9 @@ try:
         st.markdown("<div class='stats-card'><div class='stats-title'>🔮 NET PIPS</div><div class='stats-value' style='color: #ffaa00;'>+200.0</div></div>", unsafe_allow_html=True)
         st.markdown("<div class='stats-card'><div class='stats-title'>🎯 TOTAL SIGNALS</div><div class='stats-value'>2</div></div>", unsafe_allow_html=True)
 
-    # --- KOD WIDGET CARTA RASMI TRADINGVIEW BARU (KALIS SEKATAN MOBILE) ---
-    st.markdown("<p style='font-weight:bold; color:#a394cc; margin-bottom:5px;'>📈 XAUUSD LIVE CHART</p>", unsafe_allow_html=True)
-    
-    tv_widget_code = """
-    <!-- TradingView Widget BEGIN -->
-    <div class="tradingview-widget-container" style="height:350px;width:100%;">
-      <div id="tradingview_chart" style="height:100%;width:100%;"></div>
-      <script type="text/javascript" src="https://tradingview.com"></script>
-      <script type="text/javascript">
-      new TradingView.widget({
-        "autosize": true,
-        "symbol": "FX:XAUUSD",
-        "interval": "5",
-        "timezone": "Asia/Kuala_Lumpur",
-        "theme": "dark",
-        "style": "1",
-        "locale": "ms",
-        "toolbar_bg": "#f1f3f6",
-        "enable_publishing": false,
-        "hide_side_toolbar": false,
-        "allow_symbol_change": true,
-        "container_id": "tradingview_chart"
-      });
-      </script>
-    </div>
-    <!-- TradingView Widget END -->
-    """
-    components.html(tv_widget_code, height=360)
+    # --- NO 1: BUTANG LINK PINTAS CARTA TRADINGVIEW (KALIS SEKATAN MOBILE) ---
+    st.markdown("<p style='font-weight:bold; color:#a394cc; margin-bottom:2px;'>📈 XAUUSD LIVE CHART</p>", unsafe_allow_html=True)
+    st.link_button("📊 BUKA CARTA LIVE TRADINGVIEW (M5)", "https://tradingview.com", use_container_width=True)
 
     # Pengiraan Teknikal Multi-Timeframe
     df_h1['EMA50'] = ta.trend.ema_indicator(df_h1['Close'], window=50)
