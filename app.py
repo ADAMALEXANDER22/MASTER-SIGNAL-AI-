@@ -34,10 +34,6 @@ tz_my = pytz.timezone('Asia/Kuala_Lumpur')
 masa_sekarang = datetime.now(tz_my)
 jam_sekarang = masa_sekarang.hour
 
-# Waktu Sesi (Anggaran Kasar Waktu Malaysia):
-# Asia: 7 AM - 3 PM (7-15)
-# London: 3 PM - 11 PM (15-23)
-# New York: 8 PM - 4 AM (20-4 atau jam >=20 atau jam <4)
 status_asia = "🟢 ACTIVE" if (7 <= jam_sekarang < 15) else "⚪ CLOSED"
 status_london = "🟢 ACTIVE" if (15 <= jam_sekarang < 23) else "⚪ CLOSED"
 status_ny = "🟢 ACTIVE" if (jam_sekarang >= 20 or jam_sekarang < 4) else "⚪ CLOSED"
@@ -46,7 +42,6 @@ bg_asia = "#1a5cff" if "ACTIVE" in status_asia else "#251b3a"
 bg_london = "#00ffcc" if "ACTIVE" in status_london else "#251b3a"
 bg_ny = "#ff3366" if "ACTIVE" in status_ny else "#251b3a"
 
-# Paparan Sesi Pasaran di Bahagian Atas
 st.markdown(f"""
 <div style='text-align: center; margin-bottom: 15px;'>
     <span class='session-badge' style='background-color: {bg_asia}; color: white;'>🌏 ASIA: {status_asia}</span>
@@ -106,13 +101,12 @@ try:
         st.markdown(f"<div class='stats-card'><div class='stats-title'>🔮 NET PIPS</div><div class='stats-value' style='color: #ffaa00;'>+{v_net_pips:.1f}</div><div class='stats-graph'>📉📈📈🗲</div><div class='stats-sub'>Accumulated Pips</div></div>", unsafe_allow_html=True)
         st.markdown(f"<div class='stats-card'><div class='stats-title'>🎯 TOTAL SIGNALS</div><div class='stats-value'>{int(v_total_signals)}</div><div class='stats-graph'>━━━━━━</div><div class='stats-sub'>Scanned Trades</div></div>", unsafe_allow_html=True)
 
-    # --- KIRAAN LOGIK RISK CALCULATOR (INPUT PENGGUNA) ---
+    # --- KIRAAN LOGIK RISK CALCULATOR ---
     st.markdown("<div class='stats-card'><p style='font-size:12px; font-weight:bold; color:#a394cc; margin-bottom:8px;'>⚙️ AI RISK & LOT CALCULATOR</p>", unsafe_allow_html=True)
     modal_akaun = st.number_input("Modal Akaun ($)", min_value=10, value=1000, step=10)
     peratus_risiko = st.slider("Risiko Per Trade (%)", min_value=1, max_value=5, value=2)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Logik Isyarat & Pengiraan Jarak SL/TP via ATR
     df_h1['EMA50'] = ta.trend.ema_indicator(df_h1['Close'], window=50)
     trend_h1 = "BULL" if df_h1['Close'].iloc[-1] > df_h1['EMA50'].iloc[-1] else "BEAR"
     
@@ -136,8 +130,7 @@ try:
 
     st.markdown("<br><p style='margin-bottom:5px; font-weight:bold; color:#a394cc;'>📊 LIVE SIGNAL STATUS</p>", unsafe_allow_html=True)
     
-    # Pengiraan Saiz Lot Automatik Berdasarkan Formula Kewangan Realistik
-    # Formula: Saiz Lot = (Duit Dipertaruhkan) / (Jarak SL dalam Pips * Nilai Pip Emas)
+    # Pengiraan Saiz Lot
     duit_risiko = modal_akaun * (peratus_risiko / 100)
     jarak_pips_sl = (atr_semasa * 1.5) * 10
     lot_size = duit_risiko / (jarak_pips_sl * 1.0) if jarak_pips_sl > 0 else 0.01
@@ -146,23 +139,13 @@ try:
     if trend_h1 == "BULL" and rsi_m30 < 65 and rsi_m15 < 65 and stoch_m5 < 25 and harga_semasa > ema200_m5:
         sl_harga = harga_semasa - (atr_semasa * 1.5)
         tp_harga = harga_semasa + (atr_semasa * 3.0)
-        status_html = f"""
-        <div class='signal-box'>
-            <span class='btn-buy'>▲ BUY ENTRY (CONFIRMED)</span>
-            <div class='target-box'>
-                🟢 <b>ENTRY:</b> ${harga_semasa:.2f}<br>
-                🔴 <b>STOP LOSS:</b> ${sl_harga:.2f}<br>
-                🔵 <b>TAKE PROFIT:</b> ${tp_harga:.2f}<br><br>
-                🧮 <b>CADANGAN SAIZ LOT:</b> <span style='color:#00ffcc; font-weight:bold;'>{lot_size:.2f} Lot</span><br>
-                💵 <b>RISIKO MAKSIMUM:</b> ${duit_risiko:.2f} ({peratus_risiko}%)
-            </div>
-        </div>"""
+        status_html = f"<div class='signal-box'><span class='btn-buy'>▲ BUY ENTRY (CONFIRMED)</span><div class='target-box'>🟢 <b>ENTRY:</b> ${harga_semasa:.2f}<br>🔴 <b>STOP LOSS:</b> ${sl_harga:.2f}<br>🔵 <b>TAKE PROFIT:</b> ${tp_harga:.2f}<br><br>🧮 <b>CADANGAN SAIZ LOT:</b> <span style='color:#00ffcc; font-weight:bold;'>{lot_size:.2f} Lot</span><br>💵 <b>RISIKO MAKSIMUM:</b> ${duit_risiko:.2f} ({peratus_risiko}%)</div></div>"
     elif trend_h1 == "BEAR" and rsi_m30 > 35 and rsi_m15 > 35 and stoch_m5 > 75 and harga_semasa < ema200_m5:
         sl_harga = harga_semasa + (atr_semasa * 1.5)
         tp_harga = harga_semasa - (atr_semasa * 3.0)
-        status_html = f"""
-        <div class='signal-box'>
-            <span class='btn-sell'>▼ SELL ENTRY (CONFIRMED)</span>
-            <div class='target-box'>
-                🔴 <b>ENTRY:</b> ${harga_semasa:.2f}<br>
-                🟢 <b>STOP LOSS:</b> ${sl_harga:.2f}<br>
+        status_html = f"<div class='signal-box'><span class='btn-sell'>▼ SELL ENTRY (CONFIRMED)</span><div class='target-box'>🔴 <b>ENTRY:</b> ${harga_semasa:.2f}<br>🟢 <b>STOP LOSS:</b> ${sl_harga:.2f}<br>🔵 <b>TAKE PROFIT:</b> ${tp_harga:.2f}<br><br>🧮 <b>CADANGAN SAIZ LOT:</b> <span style='color:#ff3366; font-weight:bold;'>{lot_size:.2f} Lot</span><br>💵 <b>RISIKO MAKSIMUM:</b> ${duit_risiko:.2f} ({peratus_risiko}%)</div></div>"
+    else:
+        status_html = "<div class='signal-box'><span class='btn-wait'>● WAIT / SCANNING MARKET</span><p style='margin-top:15px; color:#ffaa00; font-size:13px;'>Multi-timeframe tidak selari atau harga belum berada di zon selamat untuk mengikut arah EMA 200. Sila tunggu struktur pasaran stabil sebelum melakukan entry.</p></div>"
+        
+    st.markdown(status_html, unsafe_allow_html=True)
+
