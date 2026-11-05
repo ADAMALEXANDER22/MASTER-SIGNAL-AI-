@@ -3,8 +3,8 @@ import yfinance as yf
 import pandas as pd
 import ta
 
-# 1. Konfigurasi Halaman & Tema Gelap Premium XAU Katana Custom CSS
-st.set_page_config(page_title="XAU Master AI - Gold Signals", layout="centered")
+# 1. Konfigurasi Halaman & Tema Gelap Premium Custom CSS
+st.set_page_config(page_title="XAU MASTER AI SIGNAL", layout="centered")
 
 st.markdown("""
     <style>
@@ -86,9 +86,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Tajuk Aplikasi Premium
-st.markdown("<h2 style='text-align: center; color: #ffffff; margin-bottom: 0;'>🥷 XAU KATANA</h2>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #a394cc; font-size: 12px;'>GOLD SIGNALS AI BY YOU</p>", unsafe_allow_html=True)
+# --- PENUKARAN TAJUK UTAMA BARU ---
+st.markdown("<h2 style='text-align: center; color: #ffffff; margin-bottom: 0;'>🔱 XAU MASTER AI SIGNAL</h2>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #a394cc; font-size: 12px;'>GOLD SIGNALS MULTI-TIMEFRAME SYSTEM</p>", unsafe_allow_html=True)
 
 @st.cache_data(ttl=30)
 def ambil_data(period, interval):
@@ -97,14 +97,10 @@ def ambil_data(period, interval):
 
 # --- ENGINE AI BACKTESTING AUTOMATIK ---
 def hitung_statistik_sebenar(df_m5_raw, df_h1_raw):
-    # Menyalin data untuk mengelakkan ralat pandasan
     df_m5 = df_m5_raw.copy()
     df_h1 = df_h1_raw.copy()
     
-    # Pengiraan trend kasar H1 untuk diselaraskan ke M5
     df_h1['EMA50'] = ta.trend.ema_indicator(df_h1['Close'], window=50)
-    
-    # Pengiraan Indikator pada M5
     df_m5['RSI'] = ta.momentum.rsi(df_m5['Close'], window=14)
     stoch = ta.momentum.StochasticOscillator(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14)
     df_m5['stoch_k'] = stoch.stoch()
@@ -113,22 +109,18 @@ def hitung_statistik_sebenar(df_m5_raw, df_h1_raw):
     win_trades = 0
     total_pips = 0.0
     
-    # Simulasi ringkas mengimbas data 200 bar lampau untuk mengira rekod prestasi
     for i in range(50, len(df_m5)-5):
         harga_close = df_m5['Close'].iloc[i]
         stoch_val = df_m5['stoch_k'].iloc[i]
         rsi_val = df_m5['RSI'].iloc[i]
         
-        # Isyarat Contoh Buy Setup lampau
         if stoch_val < 20 and rsi_val < 45:
             total_trades += 1
-            harga_exit = df_m5['Close'].iloc[i+4] # Anggaran exit selepas 4 bar (20 minit)
-            pips = (harga_exit - harga_close) * 10 # Anggaran pertukaran pips emas
+            harga_exit = df_m5['Close'].iloc[i+4]
+            pips = (harga_exit - harga_close) * 10
             total_pips += pips
             if pips > 0:
                 win_trades += 1
-                
-        # Isyarat Contoh Sell Setup lampau
         elif stoch_val > 80 and rsi_val > 55:
             total_trades += 1
             harga_exit = df_m5['Close'].iloc[i+4]
@@ -137,7 +129,6 @@ def hitung_statistik_sebenar(df_m5_raw, df_h1_raw):
             if pips > 0:
                 win_trades += 1
                 
-    # Kiraan akhir peratusan
     win_rate = (win_trades / total_trades * 100) if total_trades > 0 else 70.0
     net_pips = total_pips if total_trades > 0 else 258.6
     final_total_signals = total_trades if total_trades > 0 else 11
@@ -210,9 +201,11 @@ try:
     df_m5['stoch_k'] = ta.momentum.StochasticOscillator(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14).stoch()
     stoch_m5 = df_m5['stoch_k'].iloc[-1]
 
-    trend_m15 = "BULL" if rsi_m15 < 50 else "BEAR"
-    trend_m30 = "BULL" if rsi_m30 < 50 else "BEAR"
-    trend_m5 = "BULL" if stoch_m5 < 50 else "BEAR"
+    # Analisis struktur trend untuk setiap timeframe secara berasingan
+    trend_h1_val = "BULL" if trend_h1 == "BULL" else "BEAR"
+    trend_m30_val = "BULL" if rsi_m30 < 50 else "BEAR"
+    trend_m15_val = "BULL" if rsi_m15 < 50 else "BEAR"
+    trend_m5_val = "BULL" if stoch_m5 < 50 else "BEAR"
 
     # --- BAHAGIAN 2: PAPARAN LIVE SIGNAL STATUS ---
     st.markdown("<br><p style='margin-bottom:5px; font-weight:bold; color:#a394cc;'>📊 LIVE SIGNAL STATUS</p>", unsafe_allow_html=True)
@@ -226,15 +219,16 @@ try:
         
     st.markdown(status_html, unsafe_allow_html=True)
 
-    # --- BAHAGIAN 3: BAR PETUNJUK TIMEFRAME MINI (Bar Bawah) ---
-    st.markdown("<br>", unsafe_allow_html=True)
-    c1, c2, c4 = st.columns(3)
+    # --- BAHAGIAN 3: BAR PETUNJUK TIMEFRAME LENGKAP (M5, M15, M30, H1) ---
+    st.markdown("<br><p style='margin-bottom:5px; font-weight:bold; color:#a394cc;'>⏱️ TIMEFRAME MONITOR</p>", unsafe_allow_html=True)
+    c1, c2, c3, c4 = st.columns(4)
     
     def get_color(t): return "#00ffcc" if t == "BULL" else "#ff3366"
     
-    c1.markdown(f"<div style='text-align:center; background:#1d1630; padding:10px; border-radius:8px; border:1px solid #3d2b63;'><b>M5</b><br><span style='color:{get_color(trend_m5)};'>{trend_m5}</span></div>", unsafe_allow_html=True)
-    c2.markdown(f"<div style='text-align:center; background:#1d1630; padding:10px; border-radius:8px; border:1px solid #3d2b63;'><b>M15</b><br><span style='color:{get_color(trend_m15)};'>{trend_m15}</span></div>", unsafe_allow_html=True)
-    c4.markdown(f"<div style='text-align:center; background:#1d1630; padding:10px; border-radius:8px; border:1px solid #3d2b63;'><b>H1</b><br><span style='color:{get_color(trend_h1)};'>{trend_h1}</span></div>", unsafe_allow_html=True)
+    c1.markdown(f"<div style='text-align:center; background:#1d1630; padding:10px; border-radius:8px; border:1px solid #3d2b63;'><b>M5</b><br><span style='color:{get_color(trend_m5_val)};'>{trend_m5_val}</span></div>", unsafe_allow_html=True)
+    c2.markdown(f"<div style='text-align:center; background:#1d1630; padding:10px; border-radius:8px; border:1px solid #3d2b63;'><b>M15</b><br><span style='color:{get_color(trend_m15_val)};'>{trend_m15_val}</span></div>", unsafe_allow_html=True)
+    c3.markdown(f"<div style='text-align:center; background:#1d1630; padding:10px; border-radius:8px; border:1px solid #3d2b63;'><b>M30</b><br><span style='color:{get_color(trend_m30_val)};'>{trend_m30_val}</span></div>", unsafe_allow_html=True)
+    c4.markdown(f"<div style='text-align:center; background:#1d1630; padding:10px; border-radius:8px; border:1px solid #3d2b63;'><b>H1</b><br><span style='color:{get_color(trend_h1_val)};'>{trend_h1_val}</span></div>", unsafe_allow_html=True)
 
 except Exception as e:
     st.error("Sedang mengira semula algoritma AI pasaran...")
