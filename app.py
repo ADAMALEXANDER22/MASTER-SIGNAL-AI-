@@ -4,7 +4,7 @@ import pandas as pd
 import ta
 
 # 1. Konfigurasi Halaman & Tema Gelap Premium (Custom CSS)
-st.set_page_config(page_title="XAU Katana AI - Gold Signals", layout="centered")
+st.set_page_config(page_title="XAU Master AI - Gold Signals", layout="centered")
 
 st.markdown("""
     <style>
