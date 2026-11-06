@@ -5,7 +5,7 @@ import ta
 from datetime import datetime
 import pytz
 
-# 1. Rombakan UI/UX Mengikut Reka Bentuk Aplikasi Rujukan
+# 1. Konfigurasi UI Premium Mengikut Reka Bentuk Rujukan
 st.set_page_config(page_title="MASTER AI SGINAL", layout="centered")
 
 st.markdown("""
@@ -47,10 +47,11 @@ st.markdown("""
     .zone-title { font-size: 11px; color: #64748b; letter-spacing: 2px; text-transform: uppercase; margin-top: 10px; }
     .zone-price { font-size: 56px; font-weight: 900; color: #ffffff; letter-spacing: -1px; margin: 5px 0; }
     
-    /* Penunjuk Status Live (Live Price Tracker Line) */
+    /* Penunjuk Status Live */
     .live-dot-line { font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
     .live-status-green { color: #00ffcc; font-weight: bold; background: rgba(0,255,204,0.1); padding: 2px 8px; border-radius: 10px; }
     .live-status-red { color: #ff3366; font-weight: bold; background: rgba(255,51,102,0.1); padding: 2px 8px; border-radius: 10px; }
+    .live-status-wait { color: #ffaa00; font-weight: bold; background: rgba(255,170,0,0.1); padding: 2px 8px; border-radius: 10px; }
     
     /* Nilai Keuntungan Utama (Pips Display) */
     .pips-profit-large { font-size: 48px; font-weight: 900; color: #00ffcc; margin-top: 5px; }
@@ -64,7 +65,7 @@ st.markdown("""
     }
     .warning-header { color: #f59e0b; font-weight: bold; margin-bottom: 4px; }
     
-    /* Kotak Sasaran Bertingkat Bawah (SL & TP Targets Grid) */
+    /* Kotak Sasaran KEKAL (SL & TP Targets Grid) */
     .target-grid { display: flex; justify-content: space-between; gap: 8px; margin-top: 15px; }
     .target-box {
         background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px;
@@ -74,10 +75,12 @@ st.markdown("""
     .t-val-sl { font-size: 15px; font-weight: 800; color: #ff3366; }
     .t-val-tp { font-size: 15px; font-weight: 800; color: #38bdf8; }
     .t-sub { font-size: 10px; color: #475569; margin-top: 2px; }
+    
+    .session-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; margin: 2px; background-color: #120e1c; border: 1px solid #2d224d; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- PENUKARAN TAJUK UTAMA BARU ---
+# Tajuk Aplikasi & Dekorasi Seni Premium
 st.markdown("<div style='text-align: center; margin-top: 10px;'>", unsafe_allow_html=True)
 st.markdown("<h2 style='color: #ffffff; font-weight: 900; letter-spacing: 1px; margin-bottom: 0;'>🔱 MASTER AI SGINAL</h2>", unsafe_allow_html=True)
 st.markdown("<p style='color: #818cf8; font-size: 11px; font-weight: 700; letter-spacing: 3px; margin-top: 0;'>GOLD SIGNALS MULTI-TIMEFRAME SYSTEM</p>", unsafe_allow_html=True)
@@ -89,23 +92,20 @@ s_asia = "🟢 ACTIVE" if (7 <= jam_myt < 15) else "⚪ CLOSED"
 s_london = "🟢 ACTIVE" if (15 <= jam_myt < 23) else "⚪ CLOSED"
 s_ny = "🟢 ACTIVE" if (jam_myt >= 20 or jam_myt < 4) else "⚪ CLOSED"
 
-def c_sess(status): return "color:#00ffcc; font-weight:bold;" if "ACTIVE" in status else "color:#64748b;"
-
 st.markdown(f"""
-<div style='text-align: center; margin-bottom: 20px; font-size: 11px; letter-spacing: 0.5px; background-color: #120e1c; padding: 8px; border-radius: 30px; border: 1px solid #2d224d;'>
-    <span style='margin: 0 8px;'>🌏 ASIA: <span style='{c_sess(s_asia)}'>{s_asia}</span></span>
-    <span style='margin: 0 8px;'>🇬🇧 LDN: <span style='{c_sess(s_london)}'>{s_london}</span></span>
-    <span style='margin: 0 8px;'>🇺🇸 NY: <span style='{c_sess(s_ny)}'>{s_ny}</span></span>
+<div style='text-align: center; margin-bottom: 20px;'>
+    <span class='session-badge'>🌏 ASIA: {s_asia}</span>
+    <span class='session-badge'>🇬🇧 LONDON: {s_london}</span>
+    <span class='session-badge'>🇺🇸 NEW YORK: {s_ny}</span>
 </div>
 """, unsafe_allow_html=True)
 
 if "demo_balance" not in st.session_state: st.session_state.demo_balance = 10000.0
 if "trade_history" not in st.session_state:
     st.session_state.trade_history = [
-        {"Time": "5m ago", "Setup": "M1 BUY", "Zone": "3921 - 3925", "Result": "Break even", "Pips": "0.0"},
-        {"Time": "15m ago", "Setup": "M1 SELL", "Zone": "3920 - 3924", "Result": "Completed TP1", "Pips": "+30.0"},
-        {"Time": "1h ago", "Setup": "M15 BUY", "Zone": "3915 - 3920", "Result": "Completed TP2", "Pips": "+50.0"},
-        {"Time": "3h ago", "Setup": "M1 SELL", "Zone": "3941 - 3945", "Result": "All TPs Hit", "Pips": "+247.0"}
+        {"Time": "5m ago", "Setup": "M1 BUY", "Zone": "2715 - 2719", "Result": "Break even", "Pips": "0.0"},
+        {"Time": "15m ago", "Setup": "M1 SELL", "Zone": "2720 - 2724", "Result": "Completed TP1", "Pips": "+30.0"},
+        {"Time": "1h ago", "Setup": "M15 BUY", "Zone": "2710 - 2714", "Result": "Completed TP2", "Pips": "+50.0"}
     ]
 
 tab_setups, tab_perf, tab_analysis = st.tabs(["🎯 SETUPS", "📈 PERFORMANCE", "📊 ANALYSIS"])
@@ -115,34 +115,47 @@ try:
     df_m15 = yf.Ticker("GC=F").history(period="5d", interval="15m")
     df_h1 = yf.Ticker("GC=F").history(period="10d", interval="1h")
     
-    harga_semasa = df_m5['Close'].iloc[-1] if not df_m5.empty else 2700.0
+    harga_semasa = df_m5['Close'].iloc[-1] if not df_m5.empty else 2715.50
     
     df_h1['EMA50'] = ta.trend.ema_indicator(df_h1['Close'], window=50)
     df_m5['stoch_k'] = ta.momentum.StochasticOscillator(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14).stoch()
-    df_m5['ATR'] = ta.volatility.average_true_range(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14)
     
     trend_h1 = "BULL" if df_h1['Close'].iloc[-1] > df_h1['EMA50'].iloc[-1] else "BEAR"
     stoch_val = df_m5['stoch_k'].iloc[-1]
-    atr_val = df_m5['ATR'].iloc[-1] if not pd.isna(df_m5['ATR'].iloc[-1]) else 2.0
 
+    # Penentuan Isyarat Dinamik
     if trend_h1 == "BULL" and stoch_val < 45:
         signal = "BUY"
         zone_low = int(harga_semasa - 2)
         zone_high = int(harga_semasa + 2)
+        sl_val = zone_low - 3
+        tp1_val = zone_high + 4
+        tp2_val = zone_high + 8
+        tp3_val = zone_high + 15
     elif trend_h1 == "BEAR" and stoch_val > 55:
         signal = "SELL"
         zone_low = int(harga_semasa - 2)
         zone_high = int(harga_semasa + 2)
+        sl_val = zone_high + 3
+        tp1_val = zone_low - 4
+        tp2_val = zone_low - 8
+        tp3_val = zone_low - 15
     else:
         signal = "WAIT"
-        zone_low, zone_high = 0, 0
+        zone_low = int(harga_semasa - 1)
+        zone_high = int(harga_semasa + 1)
+        sl_val = zone_low - 3
+        tp1_val = zone_high + 4
+        tp2_val = zone_high + 8
+        tp3_val = zone_high + 15
 
 except Exception as e:
-    harga_semasa = 2715.0
-    signal = "BUY"
-    zone_low, zone_high = 2710, 2715
-    atr_val = 2.5
+    harga_semasa = 2715.50
+    signal = "WAIT"
+    zone_low, zone_high = 2714, 2716
+    sl_val, tp1_val, tp2_val, tp3_val = 2711, 2720, 2724, 2731
 
+# ================= TAB 1: SETUPS (PAPARAN SASARAN KEKAL) =================
 with tab_setups:
     st.markdown("<div class='app-container'>", unsafe_allow_html=True)
     
@@ -151,39 +164,28 @@ with tab_setups:
         st.markdown("<div style='font-size:12px; color:#64748b;'>Gold / M5 / Just Scanned</div>", unsafe_allow_html=True)
         st.markdown("<div class='zone-title'>BUY ZONE</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='zone-price'>{zone_low} - {zone_high}</div>", unsafe_allow_html=True)
-        
         pips_diff = int((harga_semasa - zone_low) * 10)
-        st.markdown(f"<div class='live-dot-line'>● LIVE <span class='live-status-green'>${harga_semasa:.2f}</span> {abs(pips_diff)} pips mengikut zon</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='live-dot-line'>● LIVE <span class='live-status-green'>${harga_semasa:.2f}</span> {abs(pips_diff)} pips</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='pips-profit-large'>+{max(5, pips_diff)}</div>", unsafe_allow_html=True)
         st.markdown("<div class='pips-label'>PIPS IN PROFIT</div>", unsafe_allow_html=True)
-        
-        st.markdown(f"""
-        <div class='warning-card'>
-            <div class='warning-header'>⚠️ High risk · Scalps Only</div>
-            Goes against H1 structural volatility matrix. Set BE if you wish to hold further.
-        </div>
-        """, unsafe_allow_html=True)
-        
-        sl_val = zone_low - 3
-        tp1_val = zone_high + 4
-        tp2_val = zone_high + 8
-        tp3_val = zone_high + 15
-        
-        st.markdown(f"""
-        <div class='target-grid'>
-            <div class='target-box'><div class='t-title'>SL</div><div class='t-val-sl'>{sl_val}</div><div class='t-sub'>-30 pips</div></div>
-            <div class='target-box'><div class='t-title'>TP1</div><div class='t-val-tp'>{tp1_val}</div><div class='t-sub'>+40 pips</div></div>
-            <div class='target-box'><div class='t-title'>TP2</div><div class='t-val-tp'>{tp2_val}</div><div class='t-sub'>+80 pips</div></div>
-            <div class='target-box'><div class='t-title'>TP3</div><div class='t-val-tp'>{tp3_val}</div><div class='t-sub'>+150 pips</div></div>
-        </div>
-        """, unsafe_allow_html=True)
-        
     elif signal == "SELL":
         st.markdown("<span class='badge-sell'>▼ SELL</span>", unsafe_allow_html=True)
         st.markdown("<div style='font-size:12px; color:#64748b;'>Gold / M5 / Just Scanned</div>", unsafe_allow_html=True)
         st.markdown("<div class='zone-title'>SELL ZONE</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='zone-price'>{zone_low} - {zone_high}</div>", unsafe_allow_html=True)
-        
         pips_diff = int((zone_high - harga_semasa) * 10)
-        st.markdown(f"<div class='live-dot-line'>● LIVE <span class='live-status-red'>${harga_semasa:.2f}</span> {abs(pips_diff)} pips mengikut zon</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='live-dot-line'>● LIVE <span class='live-status-red'>${harga_semasa:.2f}</span> {abs(pips_diff)} pips</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='pips-loss-large'>+{max(5, pips_diff)}</div>", unsafe_allow_html=True)
+        st.markdown("<div class='pips-label'>PIPS IN PROFIT</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("<span class='badge-wait'>● SCANNING</span>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:12px; color:#64748b;'>Gold / M5 / Monitoring Matrix</div>", unsafe_allow_html=True)
+        st.markdown("<div class='zone-title'>CURRENT ZONE</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='zone-price'>{zone_low} - {zone_high}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='live-dot-line'>● LIVE <span class='live-status-wait'>${harga_semasa:.2f}</span> Pasaran Sideway</div>", unsafe_allow_html=True)
+        st.markdown("<div class='pips-profit-large' style='color:#cbd5e1;'>0</div>", unsafe_allow_html=True)
+        st.markdown("<div class='pips-label'>WAITING CONFIRMATION</div>", unsafe_allow_html=True)
+
+    # Kotak Amaran Risiko Pasaran
+    st.markdown("""
+    <div class='warning-card'>
