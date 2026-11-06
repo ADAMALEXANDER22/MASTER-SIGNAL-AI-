@@ -55,11 +55,16 @@ modal_akaun = st.number_input("Modal Akaun ($)", min_value=10, value=1000, step=
 peratus_risiko = st.slider("Risiko Per Trade (%)", min_value=1, max_value=5, value=2)
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Pembolehubah global awal
+# Tetapan Nilai Awal Pembolehubah
 harga_semasa = 0.0
 signal_type = "WAIT"
 lot_size = 0.01
 t_m5, t_m15, t_m30, t_h1 = "BEAR", "BEAR", "BEAR", "BEAR"
+buy_sentiment = 50
+sell_sentiment = 50
+progress_adx = 0.5
+adx_val = 25.0
+sl_harga, tp1, tp2, tp3 = 0.0, 0.0, 0.0, 0.0
 
 try:
     df_m5 = yf.Ticker("GC=F").history(period="7d", interval="5m")
@@ -67,15 +72,58 @@ try:
     df_m30 = yf.Ticker("GC=F").history(period="5d", interval="30m")
     df_h1 = yf.Ticker("GC=F").history(period="14d", interval="1h")
 
-    harga_semasa = df_m5['Close'].iloc[-1]
+    if not df_m5.empty:
+        harga_semasa = df_m5['Close'].iloc[-1]
+        
+        # Barometer Sentimen Pasaran
+        df_m5['RSI'] = ta.momentum.rsi(df_m5['Close'], window=14)
+        rsi_latest = df_m5['RSI'].iloc[-1] if not pd.isna(df_m5['RSI'].iloc[-1]) else 50.0
+        buy_sentiment = int(max(10, min(90, (rsi_latest - 20) * 1.6)))
+        sell_sentiment = 100 - buy_sentiment
+
+        # Bar Aliran Momentum Trend
+        df_m5['ADX'] = ta.trend.adx(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14)
+        adx_val = df_m5['ADX'].iloc[-1] if not pd.isna(df_m5['ADX'].iloc[-1]) else 25.0
+        progress_adx = max(0.0, min(1.0, adx_val / 60.0))
+
+        # Pengiraan Formula Indikator MTF
+        df_h1['EMA50'] = ta.trend.ema_indicator(df_h1['Close'], window=50)
+        df_m5['EMA200'] = ta.trend.ema_indicator(df_m5['Close'], window=200)
+        df_m5['stoch_k'] = ta.momentum.StochasticOscillator(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14).stoch()
+        df_m5['ATR'] = ta.volatility.average_true_range(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14)
+
+        t_h1 = "BULL" if df_h1['Close'].iloc[-1] > df_h1['EMA50'].iloc[-1] else "BEAR"
+        t_m30 = "BULL" if df_m30['Close'].iloc[-1] > df_m30['Close'].iloc[-3] else "BEAR"
+        t_m15 = "BULL" if df_m15['Close'].iloc[-1] > df_m15['Close'].iloc[-3] else "BEAR"
+        t_m5 = "BULL" if harga_semasa > df_m5['EMA200'].iloc[-1] else "BEAR"
+
+        atr_semasa = df_m5['ATR'].iloc[-1] if not pd.isna(df_m5['ATR'].iloc[-1]) else 2.5
+        duit_risiko = modal_akaun * (peratus_risiko / 100)
+        jarak_pips_sl = (atr_semasa * 1.5) * 10
+        lot_size = max(0.01, duit_risiko / jarak_pips_sl)
+        stoch_latest = df_m5['stoch_k'].iloc[-1]
+
+        if t_h1 == "BULL" and stoch_latest < 40:
+            signal_type = "BUY"
+            sl_harga = harga_semasa - (atr_semasa * 1.5)
+            tp1 = harga_semasa + (atr_semasa * 1.5)
+            tp2 = harga_semasa + (atr_semasa * 3.0)
+            tp3 = harga_semasa + (atr_semasa * 4.5)
+        elif t_h1 == "BEAR" and stoch_latest > 60:
+            signal_type = "SELL"
+            sl_harga = harga_semasa + (atr_semasa * 1.5)
+            tp1 = harga_semasa - (atr_semasa * 1.5)
+            tp2 = harga_semasa - (atr_semasa * 3.0)
+            tp3 = harga_semasa - (atr_semasa * 4.5)
+
+except Exception as e:
+    st.write("")
+
+# --- 2. JAMINAN BEBAS ERROR: LOGIK PAPARAN & SIMULATOR DI LUAR STRUKTUR TRY ---
+if harga_semasa > 0:
     st.markdown(f"<h1 style='text-align: center; color: #ffd700; font-weight:900;'>${harga_semasa:.2f}</h1>", unsafe_allow_html=True)
 
-    # Barometer Sentimen Pasaran
-    df_m5['RSI'] = ta.momentum.rsi(df_m5['Close'], window=14)
-    rsi_latest = df_m5['RSI'].iloc[-1]
-    buy_sentiment = int(max(10, min(90, (rsi_latest - 20) * 1.6)))
-    sell_sentiment = 100 - buy_sentiment
-
+    # Paparan Sentimen Bar
     st.markdown(f"""
     <div class='stats-card'>
         <div style='display: flex; justify-content: space-between; font-size: 12px; font-weight: bold;'>
@@ -86,80 +134,40 @@ try:
     </div>
     """, unsafe_allow_html=True)
 
-    # Bar Aliran Momentum Trend (ADX Based)
-    df_m5['ADX'] = ta.trend.adx(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14)
-    adx_val = df_m5['ADX'].iloc[-1] if not pd.isna(df_m5['ADX'].iloc[-1]) else 25.0
-    progress_adx = max(0.0, min(1.0, adx_val / 60.0))
+    # Momentum Bar
     st.markdown("<p style='font-size:11px; font-weight:bold; color:#a394cc; margin-bottom:2px;'>⚡ AI TREND STRENGTH MOMENTUM</p>", unsafe_allow_html=True)
     st.progress(progress_adx)
 
-    # --- KIRAAN DASHBOARD HASIL SEBENAR (PROFIT ANALYTICS) ---
+    # Kiraan Analisis Hasil Kerja Anda
     df_log = pd.DataFrame(st.session_state.trade_history)
     total_trades = len(df_log)
     win_trades = len(df_log[df_log['Profit'] > 0])
-    win_rate = (win_trades / total_trades * 100) if total_trades > 0 else 0.0
-    loss_rate = 100.0 - win_rate if total_trades > 0 else 0.0
-    net_pips = df_log['Pips'].sum()
-    net_profit_cash = df_log['Profit'].sum()
+    w_rate = (win_trades / total_trades * 100) if total_trades > 0 else 0.0
+    l_rate = 100.0 - w_rate if total_trades > 0 else 0.0
+    net_pips_val = df_log['Pips'].sum()
+    net_cash_val = df_log['Profit'].sum()
 
-    # Grid Statistik Utama Hasil Anda
+    # Grid Kad Statistik Atas skrin
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown(f"<div class='stats-card'><div class='stats-title'>🟢 WIN RATE</div><div class='stats-value' style='color: #00ffcc;'>{win_rate:.1f}%</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='stats-card'><div class='stats-title'>🔴 LOSS RATE</div><div class='stats-value' style='color: #ff3366;'>{loss_rate:.1f}%</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stats-card'><div class='stats-title'>🟢 WIN RATE</div><div class='stats-value' style='color: #00ffcc;'>{w_rate:.1f}%</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stats-card'><div class='stats-title'>🔴 LOSS RATE</div><div class='stats-value' style='color: #ff3366;'>{l_rate:.1f}%</div></div>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<div class='stats-card'><div class='stats-title'>🔮 NET PIPS</div><div class='stats-value' style='color: #ffaa00;'>{net_pips:+.1f}</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='stats-card'><div class='stats-title'>💵 NET PROFIT ($)</div><div class='stats-value' style='color: #00b3ff;'>${net_profit_cash:+.2f}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stats-card'><div class='stats-title'>🔮 NET PIPS</div><div class='stats-value' style='color: #ffaa00;'>{net_pips_val:+.1f}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stats-card'><div class='stats-title'>💵 NET PROFIT ($)</div><div class='stats-value' style='color: #00b3ff;'>${net_cash_val:+.2f}</div></div>", unsafe_allow_html=True)
 
     st.markdown("<p style='font-weight:bold; color:#93c5fd; font-size:12px; margin-bottom:4px;'>📈 CHART CONFLUENCE</p>", unsafe_allow_html=True)
     st.link_button("📊 OPEN LIVE TRADINGVIEW CHART (M5)", "https://tradingview.com", use_container_width=True)
 
-    # Pengiraan Formula Indikator
-    df_h1['EMA50'] = ta.trend.ema_indicator(df_h1['Close'], window=50)
-    df_m5['EMA200'] = ta.trend.ema_indicator(df_m5['Close'], window=200)
-    df_m5['stoch_k'] = ta.momentum.StochasticOscillator(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14).stoch()
-    df_m5['ATR'] = ta.volatility.average_true_range(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14)
-
-    t_h1 = "BULL" if df_h1['Close'].iloc[-1] > df_h1['EMA50'].iloc[-1] else "BEAR"
-    t_m30 = "BULL" if df_m30['Close'].iloc[-1] > df_m30['Close'].iloc[-3] else "BEAR"
-    t_m15 = "BULL" if df_m15['Close'].iloc[-1] > df_m15['Close'].iloc[-3] else "BEAR"
-    t_m5 = "BULL" if harga_semasa > df_m5['EMA200'].iloc[-1] else "BEAR"
-
-    atr_semasa = df_m5['ATR'].iloc[-1] if not pd.isna(df_m5['ATR'].iloc[-1]) else 2.5
-    duit_risiko = modal_akaun * (peratus_risiko / 100)
-    jarak_pips_sl = (atr_semasa * 1.5) * 10
-    lot_size = max(0.01, duit_risiko / jarak_pips_sl)
-
+    # Paparan Keputusan Isyarat Utama
     st.markdown("<br><p style='font-weight:bold; color:#93c5fd; font-size:12px; margin-bottom:4px;'>⚡ LIVE SIGNAL ENGINE</p>", unsafe_allow_html=True)
-    stoch_latest = df_m5['stoch_k'].iloc[-1]
-
-    if t_h1 == "BULL" and stoch_latest < 40:
-        signal_type = "BUY"
-        sl_harga = harga_semasa - (atr_semasa * 1.5)
-        tp1 = harga_semasa + (atr_semasa * 1.5)
-        tp2 = harga_semasa + (atr_semasa * 3.0)
-        tp3 = harga_semasa + (atr_semasa * 4.5)
+    if signal_type == "BUY":
         st.success(f"▲ BUY ENTRY (CONFIRMED)\n\nENTRY: ${harga_semasa:.2f}\n🔴 SL: ${sl_harga:.2f}\n🔵 TP1: ${tp1:.2f} | TP2: ${tp2:.2f} | TP3: ${tp3:.2f}\n🧮 LOT: {lot_size:.2f}")
         st.audio("https://google.com", format="audio/ogg", autoplay=True)
-    elif t_h1 == "BEAR" and stoch_latest > 60:
-        signal_type = "SELL"
-        sl_harga = harga_semasa + (atr_semasa * 1.5)
-        tp1 = harga_semasa - (atr_semasa * 1.5)
-        tp2 = harga_semasa - (atr_semasa * 3.0)
-        tp3 = harga_semasa - (atr_semasa * 4.5)
+    elif signal_type == "SELL":
         st.error(f"▼ SELL ENTRY (CONFIRMED)\n\nENTRY: ${harga_semasa:.2f}\n🔴 SL: ${sl_harga:.2f}\n🔵 TP1: ${tp1:.2f} | TP2: ${tp2:.2f} | TP3: ${tp3:.2f}\n🧮 LOT: {lot_size:.2f}")
         st.audio("https://google.com", format="audio/ogg", autoplay=True)
     else:
         st.warning("● SCANNING MARKET\n\nMulti-timeframe sedang mencari zon keselarasan pasaran.")
 
-except Exception as e:
-    st.error("Sedang memuat data live atau pasaran ditutup (hujung minggu).")
-
-# --- INTERAKSI SIMULATOR (BEBAS ERROR SPACING) ---
-if harga_semasa > 0:
-    st.markdown("<br><p style='font-weight:bold; color:#93c5fd; font-size:12px; margin-bottom:4px;'>🖲️ SIMULATED SANDBOX</p>", unsafe_allow_html=True)
-    st.info(f"Simulation Balance: ${st.session_state.demo_balance:.2f}")
-    
-    if st.session_state.active_position is None:
-        if signal_type in ["BUY", "SELL"]:
-            if st.button("🚀 EXECUTE SIMULATED POSITION", use_container_width=True):
+    # Sandbox Simulator Maya
