@@ -39,6 +39,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# Memori Simpanan untuk Paper Trading & Sejarah
 if "demo_balance" not in st.session_state: st.session_state.demo_balance = 10000.0
 if "active_position" not in st.session_state: st.session_state.active_position = None
 if "trade_history" not in st.session_state:
@@ -52,6 +53,12 @@ st.markdown("<div class='stats-card'><p style='font-size:12px; font-weight:bold;
 modal_akaun = st.number_input("Modal Akaun ($)", min_value=10, value=1000, step=10)
 peratus_risiko = st.slider("Risiko Per Trade (%)", min_value=1, max_value=5, value=2)
 st.markdown("</div>", unsafe_allow_html=True)
+
+# Pembolehubah global awal
+harga_semasa = 0.0
+signal_type = "WAIT"
+lot_size = 0.01
+t_m5, t_m15, t_m30, t_h1 = "BEAR", "BEAR", "BEAR", "BEAR"
 
 try:
     df_m5 = yf.Ticker("GC=F").history(period="7d", interval="5m")
@@ -85,7 +92,6 @@ try:
     
     st.markdown("<p style='font-size:11px; font-weight:bold; color:#a394cc; margin-bottom:2px;'>⚡ AI TREND STRENGTH MOMENTUM</p>", unsafe_allow_html=True)
     st.progress(progress_adx)
-    st.markdown(f"<p style='font-size:10px; color:#64748b; margin-top:2px;'>ADX Power Index: {adx_val:.1f}</p>", unsafe_allow_html=True)
 
     # Grid Statistik Utama
     col1, col2 = st.columns(2)
@@ -96,7 +102,6 @@ try:
         st.markdown("<div class='stats-card'><div class='stats-title'>🔮 NET PIPS</div><div class='stats-value' style='color: #ffaa00;'>+200.0</div></div>", unsafe_allow_html=True)
         st.markdown("<div class='stats-card'><div class='stats-title'>🎯 TOTAL SIGNALS</div><div class='stats-value'>2</div></div>", unsafe_allow_html=True)
 
-    # Butang Carta Live TradingView
     st.markdown("<p style='font-weight:bold; color:#93c5fd; font-size:12px; margin-bottom:4px;'>📈 CHART CONFLUENCE</p>", unsafe_allow_html=True)
     st.link_button("📊 OPEN LIVE TRADINGVIEW CHART (M5)", "https://tradingview.com", use_container_width=True)
 
@@ -117,11 +122,7 @@ try:
     lot_size = max(0.01, duit_risiko / jarak_pips_sl)
 
     st.markdown("<br><p style='font-weight:bold; color:#93c5fd; font-size:12px; margin-bottom:4px;'>⚡ LIVE SIGNAL ENGINE</p>", unsafe_allow_html=True)
-    
-    signal_type = "WAIT"
     stoch_latest = df_m5['stoch_k'].iloc[-1]
-    
-    sl_harga, tp1, tp2, tp3 = 0.0, 0.0, 0.0, 0.0
 
     if t_h1 == "BULL" and stoch_latest < 40:
         signal_type = "BUY"
@@ -142,7 +143,11 @@ try:
     else:
         st.warning("● SCANNING MARKET\n\nMulti-timeframe sedang mencari zon keselarasan pasaran.")
 
-    # Paper Trading Simulator Panel
+except Exception as e:
+    st.error("Sedang memuat data live atau pasaran ditutup (hujung minggu).")
+
+# --- 2. JAMINAN BEBAS ERROR: LOGIK SIMULATOR DI LUAR BLOK TRY-EXCEPT ---
+if harga_semasa > 0:
     st.markdown("<br><p style='font-weight:bold; color:#93c5fd; font-size:12px; margin-bottom:4px;'>🖲️ SIMULATED SANDBOX</p>", unsafe_allow_html=True)
     st.info(f"Simulation Balance: ${st.session_state.demo_balance:.2f}")
     
