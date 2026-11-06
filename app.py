@@ -110,52 +110,56 @@ if "trade_history" not in st.session_state:
 
 tab_setups, tab_perf, tab_analysis = st.tabs(["🎯 SETUPS", "📈 PERFORMANCE", "📊 ANALYSIS"])
 
+# Set Nilai Asal Kalis Error Hujung Minggu
+harga_semasa = 2715.50
+signal = "WAIT"
+zone_low, zone_high = 2714, 2716
+sl_val, tp1_val, tp2_val, tp3_val = 2711, 2720, 2724, 2731
+trend_h1 = "BEAR"
+stoch_val = 50.0
+
 try:
     df_m5 = yf.Ticker("GC=F").history(period="5d", interval="5m")
     df_m15 = yf.Ticker("GC=F").history(period="5d", interval="15m")
     df_h1 = yf.Ticker("GC=F").history(period="10d", interval="1h")
     
-    harga_semasa = df_m5['Close'].iloc[-1] if not df_m5.empty else 2715.50
-    
-    df_h1['EMA50'] = ta.trend.ema_indicator(df_h1['Close'], window=50)
-    df_m5['stoch_k'] = ta.momentum.StochasticOscillator(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14).stoch()
-    
-    trend_h1 = "BULL" if df_h1['Close'].iloc[-1] > df_h1['EMA50'].iloc[-1] else "BEAR"
-    stoch_val = df_m5['stoch_k'].iloc[-1]
+    if not df_m5.empty and not df_h1.empty and len(df_m5) > 15 and len(df_h1) > 50:
+        harga_semasa = df_m5['Close'].iloc[-1]
+        df_h1['EMA50'] = ta.trend.ema_indicator(df_h1['Close'], window=50)
+        df_m5['stoch_k'] = ta.momentum.StochasticOscillator(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14).stoch()
+        
+        trend_h1 = "BULL" if df_h1['Close'].iloc[-1] > df_h1['EMA50'].iloc[-1] else "BEAR"
+        stoch_val = df_m5['stoch_k'].iloc[-1] if not pd.isna(df_m5['stoch_k'].iloc[-1]) else 50.0
 
-    # Penentuan Isyarat Dinamik
-    if trend_h1 == "BULL" and stoch_val < 45:
-        signal = "BUY"
-        zone_low = int(harga_semasa - 2)
-        zone_high = int(harga_semasa + 2)
-        sl_val = zone_low - 3
-        tp1_val = zone_high + 4
-        tp2_val = zone_high + 8
-        tp3_val = zone_high + 15
-    elif trend_h1 == "BEAR" and stoch_val > 55:
-        signal = "SELL"
-        zone_low = int(harga_semasa - 2)
-        zone_high = int(harga_semasa + 2)
-        sl_val = zone_high + 3
-        tp1_val = zone_low - 4
-        tp2_val = zone_low - 8
-        tp3_val = zone_low - 15
-    else:
-        signal = "WAIT"
-        zone_low = int(harga_semasa - 1)
-        zone_high = int(harga_semasa + 1)
-        sl_val = zone_low - 3
-        tp1_val = zone_high + 4
-        tp2_val = zone_high + 8
-        tp3_val = zone_high + 15
+        if trend_h1 == "BULL" and stoch_val < 45:
+            signal = "BUY"
+            zone_low = int(harga_semasa - 2)
+            zone_high = int(harga_semasa + 2)
+            sl_val = zone_low - 3
+            tp1_val = zone_high + 4
+            tp2_val = zone_high + 8
+            tp3_val = zone_high + 15
+        elif trend_h1 == "BEAR" and stoch_val > 55:
+            signal = "SELL"
+            zone_low = int(harga_semasa - 2)
+            zone_high = int(harga_semasa + 2)
+            sl_val = zone_high + 3
+            tp1_val = zone_low - 4
+            tp2_val = zone_low - 8
+            tp3_val = zone_low - 15
+        else:
+            signal = "WAIT"
+            zone_low = int(harga_semasa - 1)
+            zone_high = int(harga_semasa + 1)
+            sl_val = zone_low - 3
+            tp1_val = zone_high + 4
+            tp2_val = zone_high + 8
+            tp3_val = zone_high + 15
 
 except Exception as e:
-    harga_semasa = 2715.50
-    signal = "WAIT"
-    zone_low, zone_high = 2714, 2716
-    sl_val, tp1_val, tp2_val, tp3_val = 2711, 2720, 2724, 2731
+    pass
 
-# ================= TAB 1: SETUPS (PAPARAN SASARAN KEKAL) =================
+# ================= TAB 1: SETUPS (PAPARAN SASARAN KEKAL KALIS EXCEPTION) =================
 with tab_setups:
     st.markdown("<div class='app-container'>", unsafe_allow_html=True)
     
@@ -182,10 +186,4 @@ with tab_setups:
         st.markdown("<div style='font-size:12px; color:#64748b;'>Gold / M5 / Monitoring Matrix</div>", unsafe_allow_html=True)
         st.markdown("<div class='zone-title'>CURRENT ZONE</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='zone-price'>{zone_low} - {zone_high}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='live-dot-line'>● LIVE <span class='live-status-wait'>${harga_semasa:.2f}</span> Pasaran Sideway</div>", unsafe_allow_html=True)
-        st.markdown("<div class='pips-profit-large' style='color:#cbd5e1;'>0</div>", unsafe_allow_html=True)
-        st.markdown("<div class='pips-label'>WAITING CONFIRMATION</div>", unsafe_allow_html=True)
-
-    # Kotak Amaran Risiko Pasaran
-    st.markdown("""
-    <div class='warning-card'>
+        st.markdown(f"<div class='live-dot-line'>● LIVE <span class='live-status-wait'>${harga_semasa:.2f}</span> Pasaran Menutup/Sideway</div>", unsafe_allow_html=True)
