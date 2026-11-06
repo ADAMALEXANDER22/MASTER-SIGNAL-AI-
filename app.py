@@ -44,8 +44,9 @@ if "demo_balance" not in st.session_state: st.session_state.demo_balance = 10000
 if "active_position" not in st.session_state: st.session_state.active_position = None
 if "trade_history" not in st.session_state:
     st.session_state.trade_history = [
-        {"Waktu": "04-11 15:30", "Jenis": "BUY", "Entry": 2715.40, "Exit": 2724.80, "Pips": "+94.0", "Hasil": "✅ TP"},
-        {"Waktu": "05-11 10:15", "Jenis": "SELL", "Entry": 2732.10, "Exit": 2736.50, "Pips": "-44.0", "Hasil": "❌ SL"}
+        {"Waktu": "04-11 15:30", "Jenis": "BUY", "Entry": 2715.40, "Exit": 2724.80, "Pips": 94.0, "Profit": 188.0, "Hasil": "✅ TP"},
+        {"Waktu": "05-11 10:15", "Jenis": "SELL", "Entry": 2732.10, "Exit": 2736.50, "Pips": -44.0, "Profit": -88.0, "Hasil": "❌ SL"},
+        {"Waktu": "05-11 18:45", "Jenis": "BUY", "Entry": 2720.00, "Exit": 2735.00, "Pips": 150.0, "Profit": 300.0, "Hasil": "✅ TP"}
     ]
 
 # Input Pengurusan Risiko
@@ -89,18 +90,26 @@ try:
     df_m5['ADX'] = ta.trend.adx(df_m5['High'], df_m5['Low'], df_m5['Close'], window=14)
     adx_val = df_m5['ADX'].iloc[-1] if not pd.isna(df_m5['ADX'].iloc[-1]) else 25.0
     progress_adx = max(0.0, min(1.0, adx_val / 60.0))
-    
     st.markdown("<p style='font-size:11px; font-weight:bold; color:#a394cc; margin-bottom:2px;'>⚡ AI TREND STRENGTH MOMENTUM</p>", unsafe_allow_html=True)
     st.progress(progress_adx)
 
-    # Grid Statistik Utama
+    # --- KIRAAN DASHBOARD HASIL SEBENAR (PROFIT ANALYTICS) ---
+    df_log = pd.DataFrame(st.session_state.trade_history)
+    total_trades = len(df_log)
+    win_trades = len(df_log[df_log['Profit'] > 0])
+    win_rate = (win_trades / total_trades * 100) if total_trades > 0 else 0.0
+    loss_rate = 100.0 - win_rate if total_trades > 0 else 0.0
+    net_pips = df_log['Pips'].sum()
+    net_profit_cash = df_log['Profit'].sum()
+
+    # Grid Statistik Utama Hasil Anda
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("<div class='stats-card'><div class='stats-title'>🟢 WIN RATE</div><div class='stats-value' style='color: #00ffcc;'>75.0%</div></div>", unsafe_allow_html=True)
-        st.markdown("<div class='stats-card'><div class='stats-title'>🔴 LOSS RATE</div><div class='stats-value' style='color: #ff3366;'>25.0%</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stats-card'><div class='stats-title'>🟢 WIN RATE</div><div class='stats-value' style='color: #00ffcc;'>{win_rate:.1f}%</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stats-card'><div class='stats-title'>🔴 LOSS RATE</div><div class='stats-value' style='color: #ff3366;'>{loss_rate:.1f}%</div></div>", unsafe_allow_html=True)
     with col2:
-        st.markdown("<div class='stats-card'><div class='stats-title'>🔮 NET PIPS</div><div class='stats-value' style='color: #ffaa00;'>+200.0</div></div>", unsafe_allow_html=True)
-        st.markdown("<div class='stats-card'><div class='stats-title'>🎯 TOTAL SIGNALS</div><div class='stats-value'>2</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stats-card'><div class='stats-title'>🔮 NET PIPS</div><div class='stats-value' style='color: #ffaa00;'>{net_pips:+.1f}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stats-card'><div class='stats-title'>💵 NET PROFIT ($)</div><div class='stats-value' style='color: #00b3ff;'>${net_profit_cash:+.2f}</div></div>", unsafe_allow_html=True)
 
     st.markdown("<p style='font-weight:bold; color:#93c5fd; font-size:12px; margin-bottom:4px;'>📈 CHART CONFLUENCE</p>", unsafe_allow_html=True)
     st.link_button("📊 OPEN LIVE TRADINGVIEW CHART (M5)", "https://tradingview.com", use_container_width=True)
@@ -146,7 +155,7 @@ try:
 except Exception as e:
     st.error("Sedang memuat data live atau pasaran ditutup (hujung minggu).")
 
-# --- 2. JAMINAN BEBAS ERROR: LOGIK SIMULATOR DI LUAR BLOK TRY-EXCEPT ---
+# --- INTERAKSI SIMULATOR (BEBAS ERROR SPACING) ---
 if harga_semasa > 0:
     st.markdown("<br><p style='font-weight:bold; color:#93c5fd; font-size:12px; margin-bottom:4px;'>🖲️ SIMULATED SANDBOX</p>", unsafe_allow_html=True)
     st.info(f"Simulation Balance: ${st.session_state.demo_balance:.2f}")
@@ -154,14 +163,3 @@ if harga_semasa > 0:
     if st.session_state.active_position is None:
         if signal_type in ["BUY", "SELL"]:
             if st.button("🚀 EXECUTE SIMULATED POSITION", use_container_width=True):
-                st.session_state.active_position = {"Jenis": signal_type, "Entry": harga_semasa, "Waktu": datetime.now(tz_my).strftime("%H:%M")}
-                st.rerun()
-        else:
-            st.button("❌ NO ACTIVE SIGNAL FOR SIMULATION", disabled=True, use_container_width=True)
-    else:
-        pos = st.session_state.active_position
-        pips_live = (harga_semasa - pos["Entry"]) * 10 if pos["Jenis"] == "BUY" else (pos["Entry"] - harga_semasa) * 10
-        st.warning(f"Active Position: {pos['Jenis']} @ ${pos['Entry']:.2f} ({pips_live:+.1f} Pips)")
-        if st.button("🔒 CLOSE SIMULATED POSITION NOW", use_container_width=True):
-            prof = pips_live * lot_size
-            st.session_state.demo_balance += prof
